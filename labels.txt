@@ -1,12 +1,1 @@
-0 Bangus_Fresh
-1 Bangus_Non Fresh
-2 Bangus_Semi Fresh
-3 Tamban_Fresh
-4 Tamban_Non Fresh
-5 Tamban_Semi Fresh 
-6 Tilapia_Fresh
-7 Tilapia_Non Fresh
-8 Tilapia_Semi Fresh
-9 Tulingan_Fresh
-10 Tulingan_Non Fresh
-11 Tulingan_Semi Fresh
+
