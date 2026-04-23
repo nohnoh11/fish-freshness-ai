@@ -3,18 +3,11 @@ import tensorflow as tf
 import numpy as np
 import cv2
 from PIL import Image
-import time
 
 # =========================
 # PAGE CONFIG
 # =========================
 st.set_page_config(page_title="Fish Freshness AI", page_icon="🐟", layout="centered")
-
-# =========================
-# SESSION ANALYTICS
-# =========================
-if "history" not in st.session_state:
-    st.session_state.history = []
 
 # =========================
 # CUSTOM UI STYLE
@@ -63,19 +56,15 @@ with open("labels.txt", "r") as f:
 # HEADER
 # =========================
 st.markdown('<div class="title">🐟 Fish Freshness AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="subtitle">Detection + Analytics System</div>', unsafe_allow_html=True)
+st.markdown('<div class="subtitle">Detection System</div>', unsafe_allow_html=True)
 
 # =========================
 # SIDEBAR
 # =========================
 st.sidebar.title("⚙ Controls")
 
-mode = st.sidebar.radio("Mode", ["Upload Image", "Camera Capture", "Live Webcam"])
+mode = st.sidebar.radio("Mode", ["Upload Image", "Camera Capture"])
 show_probs = st.sidebar.checkbox("Show Probabilities", True)
-
-if st.sidebar.button("🔄 Reset Analytics"):
-    st.session_state.history = []
-    st.rerun()
 
 # =========================
 # PREDICT FUNCTION
@@ -96,7 +85,7 @@ def predict_image(image):
     return preds, index
 
 # =========================
-# IMAGE / CAMERA INPUT
+# IMAGE INPUT
 # =========================
 image = None
 
@@ -111,7 +100,7 @@ elif mode == "Camera Capture":
         image = Image.open(cam)
 
 # =========================
-# IMAGE RESULT
+# RESULT DISPLAY
 # =========================
 if image is not None:
     st.image(image, use_container_width=True)
@@ -122,15 +111,9 @@ if image is not None:
     confidence = float(preds[index]) * 100
     label = class_names[index]
 
-    # SAVE TO ANALYTICS
-    st.session_state.history.append({
-        "label": label,
-        "confidence": confidence
-    })
-
     st.markdown('<div class="card">', unsafe_allow_html=True)
 
-    # RESULT DISPLAY
+    # RESULT BADGE
     if "Non" in label:
         st.markdown('<div class="badge" style="background:#ef4444;">❌ NON FRESH</div>', unsafe_allow_html=True)
     elif "Semi" in label:
@@ -151,92 +134,7 @@ if image is not None:
             st.progress(int(prob*100))
 
 # =========================
-# LIVE WEBCAM
-# =========================
-if mode == "Live Webcam":
-    st.warning("Click START to run webcam")
-
-    start = st.button("▶ Start Webcam")
-    FRAME_WINDOW = st.image([])
-
-    if start:
-        camera = cv2.VideoCapture(0)
-
-        while True:
-            ret, frame = camera.read()
-            if not ret:
-                st.error("Camera not working")
-                break
-
-            img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-            resized = cv2.resize(img, (224,224))
-            normalized = resized.astype(np.float32) / 255.0
-            input_img = np.expand_dims(normalized, axis=0)
-
-            preds = model.predict(input_img, verbose=0)[0]
-            index = np.argmax(preds)
-            confidence = float(preds[index]) * 100
-            label = class_names[index]
-
-            # SAVE TO ANALYTICS
-            st.session_state.history.append({
-                "label": label,
-                "confidence": confidence
-            })
-
-            # COLOR
-            color = (0,255,0)
-            if "Non" in label:
-                color = (0,0,255)
-            elif "Semi" in label:
-                color = (0,165,255)
-
-            text = f"{label} ({confidence:.1f}%)"
-
-            cv2.putText(frame, text, (10,40),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        1, color, 2)
-
-            FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-
-            time.sleep(0.03)
-
-# =========================
-# ANALYTICS DASHBOARD
-# =========================
-st.markdown("## 📊 Analytics Dashboard")
-
-history = st.session_state.history
-
-if len(history) > 0:
-    total = len(history)
-
-    fresh = sum(1 for x in history if "Fresh" in x["label"] and "Non" not in x["label"])
-    semi = sum(1 for x in history if "Semi" in x["label"])
-    non = sum(1 for x in history if "Non" in x["label"])
-
-    avg_conf = sum(x["confidence"] for x in history) / total
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Total", total)
-    col2.metric("Fresh", fresh)
-    col3.metric("Semi", semi)
-    col4.metric("Non", non)
-
-    st.write(f"**Average Confidence:** {avg_conf:.2f}%")
-
-    st.bar_chart({
-        "Fresh": fresh,
-        "Semi Fresh": semi,
-        "Non Fresh": non
-    })
-
-else:
-    st.info("No analytics data yet.")
-
-# =========================
 # FOOTER
 # =========================
 st.markdown("---")
-st.caption("Fish Freshness Detection System with Analytics")
+st.caption("Fish Freshness Detection System")
